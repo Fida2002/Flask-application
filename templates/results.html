@@ -1,0 +1,249 @@
+{% extends "base.html" %}
+
+{% block title %}Analysis Results - Stock Analyzer{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- Header -->
+    <div class="text-center">
+        <h1 class="text-3xl font-bold mb-4">
+            <i class="fas fa-chart-line text-green-500 mr-3"></i>
+            Watchlist Analysis Results
+        </h1>
+        <p class="text-gray-400">Tickers that meet your selected criteria</p>
+    </div>
+
+    {% if results %}
+        <!-- Results Summary -->
+        <div class="bg-gray-800 rounded-xl p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-xl font-semibold">
+                    <i class="fas fa-trophy text-yellow-500 mr-2"></i>
+                    Passing Tickers ({{ results|length }})
+                </h2>
+                <a href="{{ url_for('index') }}" class="btn-primary px-4 py-2 rounded-lg text-white">
+                    <i class="fas fa-arrow-left mr-2"></i>Back to Dashboard
+                </a>
+            </div>
+
+            <!-- Results Table -->
+            <div class="overflow-x-auto">
+                <table class="w-full table-auto">
+                    <thead>
+                        <tr class="border-b border-gray-700">
+                            <th class="text-left py-3 px-4 font-semibold">Ticker</th>
+                            <th class="text-left py-3 px-4 font-semibold">Type</th>
+                            <th class="text-left py-3 px-4 font-semibold">Price</th>
+                            {% if criteria.rsi_confirmation %}<th class="text-left py-3 px-4 font-semibold">RSI</th>{% endif %}
+                            {% if criteria.weekly_macd %}<th class="text-left py-3 px-4 font-semibold">Weekly MACD</th>{% endif %}
+                            {% if criteria.macd_crossover %}<th class="text-left py-3 px-4 font-semibold">Daily MACD</th>{% endif %}
+                            {% if criteria.dmi_confirmation %}<th class="text-left py-3 px-4 font-semibold">DMI</th>{% endif %}
+                            {% if criteria.ema_crossover %}<th class="text-left py-3 px-4 font-semibold">EMA</th>{% endif %}
+                            {% if criteria.avoid_squeeze %}<th class="text-left py-3 px-4 font-semibold">Squeeze Risk</th>{% endif %}
+                            {% if criteria.next_earning_date %}<th class="text-left py-3 px-4 font-semibold">Earnings</th>{% endif %}
+                            <th class="text-left py-3 px-4 font-semibold">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for result in results %}
+                        <tr class="border-b border-gray-700 hover:bg-gray-750 transition-colors">
+                            <td class="py-3 px-4">
+                                <span class="font-medium">{{ result.ticker }}</span>
+                            </td>
+                            <td class="py-3 px-4">
+                                <span class="px-2 py-1 bg-blue-900 text-blue-200 rounded text-sm">
+                                    {{ result.asset_type }}
+                                </span>
+                            </td>
+                            <td class="py-3 px-4 font-medium">{{ result.current_price.formatted }}</td>
+                            
+                            {% if criteria.rsi_confirmation and result.rsi_confirmation %}
+                            <td class="py-3 px-4">
+                                <span class="{% if result.rsi_confirmation.status == '✅' %}status-success{% elif result.rsi_confirmation.status == '⚠️' %}status-warning{% else %}status-error{% endif %}">
+                                    {{ result.rsi_confirmation.status }}
+                                </span>
+                                {% if result.rsi_confirmation.value %}
+                                <div class="text-xs text-gray-400">{{ "%.1f"|format(result.rsi_confirmation.value) }}</div>
+                                {% endif %}
+                            </td>
+                            {% endif %}
+                            
+                            {% if criteria.weekly_macd and result.weekly_macd %}
+                            <td class="py-3 px-4">
+                                <span class="{% if result.weekly_macd.status == '✅' %}status-success{% elif result.weekly_macd.status == '⚠️' %}status-warning{% else %}status-error{% endif %}">
+                                    {{ result.weekly_macd.status }}
+                                </span>
+                            </td>
+                            {% endif %}
+                            
+                            {% if criteria.macd_crossover and result.macd_crossover %}
+                            <td class="py-3 px-4">
+                                <span class="{% if result.macd_crossover.status == '✅' %}status-success{% elif result.macd_crossover.status == '⚠️' %}status-warning{% else %}status-error{% endif %}">
+                                    {{ result.macd_crossover.status }}
+                                </span>
+                            </td>
+                            {% endif %}
+                            
+                            {% if criteria.dmi_confirmation and result.dmi_confirmation %}
+                            <td class="py-3 px-4">
+                                <span class="{% if result.dmi_confirmation.status == '✅' %}status-success{% elif result.dmi_confirmation.status == '⚠️' %}status-warning{% else %}status-error{% endif %}">
+                                    {{ result.dmi_confirmation.status }}
+                                </span>
+                                {% if result.dmi_confirmation.value %}
+                                <div class="text-xs text-gray-400">ADX: {{ "%.1f"|format(result.dmi_confirmation.value.adx) }}</div>
+                                {% endif %}
+                            </td>
+                            {% endif %}
+                            
+                            {% if criteria.ema_crossover and result.ema_crossover %}
+                            <td class="py-3 px-4">
+                                <span class="{% if result.ema_crossover.status == '✅' %}status-success{% elif result.ema_crossover.status == '⚠️' %}status-warning{% else %}status-error{% endif %}">
+                                    {{ result.ema_crossover.status }}
+                                </span>
+                            </td>
+                            {% endif %}
+                            
+                            {% if criteria.avoid_squeeze and result.avoid_squeeze %}
+                            <td class="py-3 px-4">
+                                <span class="{% if result.avoid_squeeze.status == '✅' %}status-success{% elif result.avoid_squeeze.status == '⚠️' %}status-warning{% else %}status-error{% endif %}">
+                                    {{ result.avoid_squeeze.status }}
+                                </span>
+                                {% if result.avoid_squeeze.value and result.avoid_squeeze.status == '⚠️' %}
+                                <div class="text-xs text-gray-400">RVOL: {{ "%.1f"|format(result.avoid_squeeze.value.rvol) }}</div>
+                                {% endif %}
+                            </td>
+                            {% endif %}
+                            
+                            {% if criteria.next_earning_date and result.next_earning_date %}
+                            <td class="py-3 px-4">
+                                <span class="{% if result.next_earning_date.status == '✅' %}status-success{% else %}status-error{% endif %}">
+                                    {{ result.next_earning_date.status }}
+                                </span>
+                                {% if result.next_earning_date.value %}
+                                <div class="text-xs text-gray-400">{{ result.next_earning_date.value }}</div>
+                                {% endif %}
+                            </td>
+                            {% endif %}
+                            
+                            <td class="py-3 px-4">
+                                <a href="{{ url_for('ticker_detail', ticker=result.ticker) }}" 
+                                   class="text-blue-400 hover:text-blue-300 text-sm font-medium">
+                                    <i class="fas fa-chart-bar mr-1"></i>View Charts
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Chart Previews -->
+        <div class="space-y-8">
+            {% for result in results %}
+            <div class="bg-gray-800 rounded-xl p-6">
+                <h3 class="text-xl font-semibold mb-4">
+                    <i class="fas fa-chart-line text-blue-500 mr-2"></i>
+                    Charts for {{ result.ticker }} ({{ result.asset_type }})
+                </h3>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {% if criteria.rsi_confirmation and result.rsi_confirmation and result.rsi_confirmation.status == '✅' %}
+                    <div class="bg-gray-900 rounded-lg p-4">
+                        <h4 class="font-medium mb-3">RSI Chart</h4>
+                        <div id="rsi-chart-{{ result.ticker }}" style="height: 300px;"></div>
+                    </div>
+                    <script>
+                        fetch('/chart/{{ result.ticker }}/rsi')
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.chart) {
+                                    Plotly.newPlot('rsi-chart-{{ result.ticker }}', JSON.parse(data.chart));
+                                }
+                            });
+                    </script>
+                    {% endif %}
+                    
+                    {% if criteria.weekly_macd and result.weekly_macd and result.weekly_macd.status == '✅' %}
+                    <div class="bg-gray-900 rounded-lg p-4">
+                        <h4 class="font-medium mb-3">Weekly MACD</h4>
+                        <div id="weekly-macd-chart-{{ result.ticker }}" style="height: 300px;"></div>
+                    </div>
+                    <script>
+                        fetch('/chart/{{ result.ticker }}/weekly_macd')
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.chart) {
+                                    Plotly.newPlot('weekly-macd-chart-{{ result.ticker }}', JSON.parse(data.chart));
+                                }
+                            });
+                    </script>
+                    {% endif %}
+                    
+                    {% if criteria.macd_crossover and result.macd_crossover and result.macd_crossover.status == '✅' %}
+                    <div class="bg-gray-900 rounded-lg p-4">
+                        <h4 class="font-medium mb-3">Daily MACD</h4>
+                        <div id="daily-macd-chart-{{ result.ticker }}" style="height: 300px;"></div>
+                    </div>
+                    <script>
+                        fetch('/chart/{{ result.ticker }}/macd')
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.chart) {
+                                    Plotly.newPlot('daily-macd-chart-{{ result.ticker }}', JSON.parse(data.chart));
+                                }
+                            });
+                    </script>
+                    {% endif %}
+                    
+                    {% if criteria.ema_crossover and result.ema_crossover and result.ema_crossover.status == '✅' %}
+                    <div class="bg-gray-900 rounded-lg p-4">
+                        <h4 class="font-medium mb-3">EMA Crossover</h4>
+                        <div id="ema-chart-{{ result.ticker }}" style="height: 300px;"></div>
+                    </div>
+                    <script>
+                        fetch('/chart/{{ result.ticker }}/ema')
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.chart) {
+                                    Plotly.newPlot('ema-chart-{{ result.ticker }}', JSON.parse(data.chart));
+                                }
+                            });
+                    </script>
+                    {% endif %}
+                    
+                    {% if criteria.dmi_confirmation and result.dmi_confirmation and result.dmi_confirmation.status == '✅' %}
+                    <div class="bg-gray-900 rounded-lg p-4">
+                        <h4 class="font-medium mb-3">DMI Indicators</h4>
+                        <div id="dmi-chart-{{ result.ticker }}" style="height: 300px;"></div>
+                    </div>
+                    <script>
+                        fetch('/chart/{{ result.ticker }}/dmi')
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.chart) {
+                                    Plotly.newPlot('dmi-chart-{{ result.ticker }}', JSON.parse(data.chart));
+                                }
+                            });
+                    </script>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+    {% else %}
+        <!-- No Results -->
+        <div class="text-center py-16">
+            <div class="bg-gray-800 rounded-xl p-8 max-w-md mx-auto">
+                <i class="fas fa-search text-gray-500 text-6xl mb-4"></i>
+                <h3 class="text-xl font-semibold mb-2">No Matching Tickers</h3>
+                <p class="text-gray-400 mb-6">None of the tickers in your watchlist meet the selected criteria.</p>
+                <a href="{{ url_for('index') }}" class="btn-primary px-6 py-3 rounded-lg text-white">
+                    <i class="fas fa-arrow-left mr-2"></i>Try Different Criteria
+                </a>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

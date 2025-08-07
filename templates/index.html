@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- Hero Section -->
+    <div class="text-center gradient-bg rounded-xl p-8">
+        <h1 class="text-4xl font-bold text-white mb-4">
+            <i class="fas fa-chart-line text-blue-300 mr-3"></i>
+            Stock & Options Watchlist Analyzer
+        </h1>
+        <p class="text-xl text-gray-200 mb-6">
+            Analyze your watchlist against custom technical criteria with professional-grade indicators
+        </p>
+        
+        <!-- API Key Section -->
+        <div class="max-w-md mx-auto">
+            <form method="POST" action="{{ url_for('set_api_key') }}" class="flex gap-2">
+                <input type="password" name="api_key" placeholder="Enter your Polygon.io API Key" 
+                       value="{{ api_key }}" 
+                       class="flex-1 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-lg border border-white/30 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-300">
+                <button type="submit" class="btn-primary px-6 py-2 rounded-lg font-medium text-white">
+                    <i class="fas fa-key mr-2"></i>Save
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Watchlist Management -->
+        <div class="lg:col-span-1">
+            <div class="bg-gray-800 rounded-xl p-6 card-hover">
+                <h2 class="text-2xl font-bold mb-6 text-center">
+                    <i class="fas fa-list-ul text-green-500 mr-2"></i>
+                    Manage Watchlist
+                </h2>
+                
+                <!-- Add Ticker Form -->
+                <form method="POST" action="{{ url_for('add_ticker') }}" class="space-y-4 mb-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Ticker Symbol</label>
+                        <input type="text" name="ticker" placeholder="e.g., AAPL" required
+                               class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Asset Type</label>
+                        <select name="asset_type" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="Stock">Stock</option>
+                            <option value="Option">Option</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="w-full btn-primary py-2 rounded-lg font-medium text-white">
+                        <i class="fas fa-plus mr-2"></i>Add to Watchlist
+                    </button>
+                </form>
+
+                <!-- Current Watchlist -->
+                <div class="border-t border-gray-700 pt-4">
+                    <h3 class="font-semibold mb-3 text-gray-300">Your Watchlist ({{ watchlist|length }})</h3>
+                    {% if watchlist %}
+                        <div class="space-y-2 max-h-64 overflow-y-auto">
+                            {% for item in watchlist %}
+                                <div class="flex items-center justify-between p-3 bg-gray-700 rounded-lg">
+                                    <div>
+                                        <span class="font-medium">{{ item.ticker }}</span>
+                                        <span class="text-sm text-gray-400 ml-2">({{ item.asset_type }})</span>
+                                    </div>
+                                    <div class="flex space-x-2">
+                                        <a href="{{ url_for('ticker_detail', ticker=item.ticker) }}" 
+                                           class="text-blue-400 hover:text-blue-300 text-sm">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{{ url_for('remove_ticker', ticker=item.ticker) }}" 
+                                           class="text-red-400 hover:text-red-300 text-sm"
+                                           onclick="return confirm('Remove {{ item.ticker }} from watchlist?')">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-gray-400 text-center py-4">
+                            <i class="fas fa-inbox text-gray-500 text-2xl mb-2 block"></i>
+                            Your watchlist is empty
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Analysis Criteria -->
+        <div class="lg:col-span-2">
+            <div class="bg-gray-800 rounded-xl p-6 card-hover">
+                <h2 class="text-2xl font-bold mb-6 text-center">
+                    <i class="fas fa-cogs text-orange-500 mr-2"></i>
+                    Analysis Criteria
+                </h2>
+                
+                <form method="POST" action="{{ url_for('analyze_watchlist') }}">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        <div class="space-y-4">
+                            <label class="flex items-center p-3 bg-gray-700 rounded-lg hover:bg-gray-650 cursor-pointer transition-colors">
+                                <input type="checkbox" name="avoid_squeeze" class="mr-3 text-blue-600 bg-gray-600 border-gray-500 rounded focus:ring-blue-500">
+                                <div>
+                                    <span class="font-medium">Avoid Squeeze (Daily)</span>
+                                    <p class="text-sm text-gray-400">Detect potential short squeeze risks</p>
+                                </div>
+                            </label>
+                            
+                            <label class="flex items-center p-3 bg-gray-700 rounded-lg hover:bg-gray-650 cursor-pointer transition-colors">
+                                <input type="checkbox" name="rsi_confirmation" checked class="mr-3 text-blue-600 bg-gray-600 border-gray-500 rounded focus:ring-blue-500">
+                                <div>
+                                    <span class="font-medium">RSI Confirmation</span>
+                                    <p class="text-sm text-gray-400">RSI between 30-60 and rising</p>
+                                </div>
+                            </label>
+                            
+                            <label class="flex items-center p-3 bg-gray-700 rounded-lg hover:bg-gray-650 cursor-pointer transition-colors">
+                                <input type="checkbox" name="dmi_confirmation" class="mr-3 text-blue-600 bg-gray-600 border-gray-500 rounded focus:ring-blue-500">
+                                <div>
+                                    <span class="font-medium">DMI Confirmation</span>
+                                    <p class="text-sm text-gray-400">Bullish DMI trend with ADX > 20</p>
+                                </div>
+                            </label>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <label class="flex items-center p-3 bg-gray-700 rounded-lg hover:bg-gray-650 cursor-pointer transition-colors">
+                                <input type="checkbox" name="ema_crossover" class="mr-3 text-blue-600 bg-gray-600 border-gray-500 rounded focus:ring-blue-500">
+                                <div>
+                                    <span class="font-medium">EMA 8/21 Crossover</span>
+                                    <p class="text-sm text-gray-400">Daily EMA 8 crosses above EMA 21</p>
+                                </div>
+                            </label>
+                            
+                            <label class="flex items-center p-3 bg-gray-700 rounded-lg hover:bg-gray-650 cursor-pointer transition-colors">
+                                <input type="checkbox" name="macd_crossover" class="mr-3 text-blue-600 bg-gray-600 border-gray-500 rounded focus:ring-blue-500">
+                                <div>
+                                    <span class="font-medium">Daily MACD Crossover</span>
+                                    <p class="text-sm text-gray-400">MACD crossing or rising (8/21/9)</p>
+                                </div>
+                            </label>
+                            
+                            <label class="flex items-center p-3 bg-gray-700 rounded-lg hover:bg-gray-650 cursor-pointer transition-colors">
+                                <input type="checkbox" name="weekly_macd" checked class="mr-3 text-blue-600 bg-gray-600 border-gray-500 rounded focus:ring-blue-500">
+                                <div>
+                                    <span class="font-medium">Weekly MACD</span>
+                                    <p class="text-sm text-gray-400">Weekly MACD crossover (12/26/9)</p>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <label class="flex items-center p-3 bg-gray-700 rounded-lg hover:bg-gray-650 cursor-pointer transition-colors">
+                            <input type="checkbox" name="next_earning_date" class="mr-3 text-blue-600 bg-gray-600 border-gray-500 rounded focus:ring-blue-500">
+                            <div>
+                                <span class="font-medium">Next Earnings Date</span>
+                                <p class="text-sm text-gray-400">Check for upcoming earnings announcements</p>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div class="text-center">
+                        <button type="submit" class="btn-primary px-8 py-3 rounded-lg font-medium text-white text-lg">
+                            <i class="fas fa-search mr-2"></i>
+                            Run Analysis on Watchlist
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-gray-800 rounded-xl p-6 text-center card-hover">
+            <i class="fas fa-list text-blue-500 text-3xl mb-3"></i>
+            <h3 class="text-xl font-semibold mb-2">Total Tickers</h3>
+            <p class="text-3xl font-bold text-blue-400">{{ watchlist|length }}</p>
+        </div>
+        <div class="bg-gray-800 rounded-xl p-6 text-center card-hover">
+            <i class="fas fa-chart-bar text-green-500 text-3xl mb-3"></i>
+            <h3 class="text-xl font-semibold mb-2">Stocks</h3>
+            <p class="text-3xl font-bold text-green-400">{{ watchlist|selectattr("asset_type", "equalto", "Stock")|list|length }}</p>
+        </div>
+        <div class="bg-gray-800 rounded-xl p-6 text-center card-hover">
+            <i class="fas fa-coins text-orange-500 text-3xl mb-3"></i>
+            <h3 class="text-xl font-semibold mb-2">Options</h3>
+            <p class="text-3xl font-bold text-orange-400">{{ watchlist|selectattr("asset_type", "equalto", "Option")|list|length }}</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

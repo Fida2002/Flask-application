@@ -1,0 +1,68 @@
+/* Additional custom styles if needed */
+.chart-container {
+    min-height: 400px;
+}
+
+.ticker-badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    background-color: #374151;
+    color: #d1d5db;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.status-indicator {
+    font-size: 1.125rem;
+    font-weight: bold;
+}
+
+.loading-spinner {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Responsive table styles */
+@media (max-width: 768px) {
+    .table-responsive {
+        overflow-x: auto;
+    }
+    
+    .table-responsive table {
+        min-width: 600px;
+    }
+}
+
+/* Custom checkbox styles */
+input[type="checkbox"]:checked {
+    background-color: #3b82f6;
+    border-color: #3b82f6;
+}
+
+/* Hover effects for cards */
+.card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+/* Button animations */
+.btn-animate {
+    transition: all 0.2s ease;
+}
+
+.btn-animate:hover {
+    transform: scale(1.05);
+}
+
+.btn-animate:active {
+    transform: scale(0.95);
+}

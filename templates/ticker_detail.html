@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block title %}{{ ticker }} Details - Stock Analyzer{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold mb-2">
+                <i class="fas fa-chart-line text-blue-500 mr-3"></i>
+                {{ ticker }} Details
+            </h1>
+            <p class="text-gray-400">{{ ticker_info.asset_type }} • Added {{ ticker_info.added_at[:10] }}</p>
+        </div>
+        <a href="{{ url_for('index') }}" class="btn-primary px-4 py-2 rounded-lg text-white">
+            <i class="fas fa-arrow-left mr-2"></i>Back to Dashboard
+        </a>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div class="bg-gray-800 rounded-xl p-6 text-center card-hover">
+            <i class="fas fa-dollar-sign text-green-500 text-2xl mb-3"></i>
+            <h3 class="text-lg font-semibold mb-2">Current Price</h3>
+            <p class="text-2xl font-bold text-green-400">
+                {% if current_price %}${{ "%.2f"|format(current_price) }}{% else %}N/A{% endif %}
+            </p>
+        </div>
+        <div class="bg-gray-800 rounded-xl p-6 text-center card-hover">
+            <i class="fas fa-tag text-blue-500 text-2xl mb-3"></i>
+            <h3 class="text-lg font-semibold mb-2">Asset Type</h3>
+            <p class="text-2xl font-bold text-blue-400">{{ ticker_info.asset_type }}</p>
+        </div>
+        <div class="bg-gray-800 rounded-xl p-6 text-center card-hover">
+            <i class="fas fa-calendar text-orange-500 text-2xl mb-3"></i>
+            <h3 class="text-lg font-semibold mb-2">Added Date</h3>
+            <p class="text-2xl font-bold text-orange-400">{{ ticker_info.added_at[:10] }}</p>
+        </div>
+        <div class="bg-gray-800 rounded-xl p-6 text-center card-hover">
+            <i class="fas fa-chart-bar text-purple-500 text-2xl mb-3"></i>
+            <h3 class="text-lg font-semibold mb-2">Next Earnings</h3>
+            <p class="text-lg font-bold text-purple-400">
+                {% if earnings_date %}{{ earnings_date }}{% else %}N/A{% endif %}
+            </p>
+        </div>
+    </div>
+
+    <!-- Interactive Charts -->
+    <div class="bg-gray-800 rounded-xl p-6">
+        <h2 class="text-2xl font-bold mb-6">
+            <i class="fas fa-chart-area text-green-500 mr-2"></i>
+            Technical Analysis Charts
+        </h2>
+        
+        <!-- Chart Selection -->
+        <div class="flex flex-wrap gap-2 mb-6">
+            <button onclick="loadChart('rsi')" class="chart-btn btn-primary px-4 py-2 rounded-lg text-white">
+                <i class="fas fa-wave-square mr-2"></i>RSI
+            </button>
+            {% if ticker_info.asset_type == 'Stock' %}
+            <button onclick="loadChart('macd')" class="chart-btn bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg text-white transition-colors">
+                <i class="fas fa-chart-line mr-2"></i>Daily MACD
+            </button>
+            <button onclick="loadChart('weekly_macd')" class="chart-btn bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg text-white transition-colors">
+                <i class="fas fa-chart-bar mr-2"></i>Weekly MACD
+            </button>
+            <button onclick="loadChart('ema')" class="chart-btn bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg text-white transition-colors">
+                <i class="fas fa-trending-up mr-2"></i>EMA Crossover
+            </button>
+            <button onclick="loadChart('dmi')" class="chart-btn bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg text-white transition-colors">
+                <i class="fas fa-arrows-alt mr-2"></i>DMI
+            </button>
+            {% endif %}
+        </div>
+
+        <!-- Chart Container -->
+        <div class="bg-gray-900 rounded-lg p-4">
+            <div id="chart-container" style="height: 500px;">
+                <div class="flex items-center justify-center h-full text-gray-400">
+                    <div class="text-center">
+                        <i class="fas fa-chart-line text-4xl mb-4"></i>
+                        <p>Select a chart to view technical analysis</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div id="loading-indicator" class="hidden text-center py-8">
+            <i class="fas fa-spinner fa-spin text-blue-500 text-2xl"></i>
+            <p class="text-gray-400 mt-2">Loading chart data...</p>
+        </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="flex justify-center space-x-4">
+        <a href="{{ url_for('remove_ticker', ticker=ticker) }}" 
+           class="bg-red-600 hover:bg-red-700 px-6 py-3 rounded-lg text-white font-medium transition-colors"
+           onclick="return confirm('Remove {{ ticker }} from watchlist?')">
+            <i class="fas fa-trash mr-2"></i>Remove from Watchlist
+        </a>
+    </div>
+</div>
+
+<script>
+let currentChart = null;
+
+function loadChart(chartType) {
+    const container = document.getElementById('chart-container');
+    const loadingIndicator = document.getElementById('loading-indicator');
+    
+    // Update button states
+    document.querySelectorAll('.chart-btn').forEach(btn => {
+        btn.className = btn.className.replace('btn-primary', 'bg-gray-700 hover:bg-gray-600');
+    });
+    event.target.className = event.target.className.replace('bg-gray-700 hover:bg-gray-600', 'btn-primary');
+    
+    // Show loading
+    container.innerHTML = '';
+    loadingIndicator.classList.remove('hidden');
+    
+    // Fetch chart data
+    fetch(`/chart/{{ ticker }}/${chartType}`)
+        .then(response => response.json())
+        .then(data => {
+            loadingIndicator.classList.add('hidden');
+            if (data.error) {
+                container.innerHTML = `
+                    <div class="flex items-center justify-center h-full text-red-400">
+                        <div class="text-center">
+                            <i class="fas fa-exclamation-triangle text-4xl mb-4"></i>
+                            <p>Error loading chart: ${data.error}</p>
+                        </div>
+                    </div>
+                `;
+            } else if (data.chart) {
+                Plotly.newPlot('chart-container', JSON.parse(data.chart));
+                currentChart = chartType;
+            }
+        })
+        .catch(error => {
+            loadingIndicator.classList.add('hidden');
+            container.innerHTML = `
+                <div class="flex items-center justify-center h-full text-red-400">
+                    <div class="text-center">
+                        <i class="fas fa-exclamation-triangle text-4xl mb-4"></i>
+                        <p>Network error loading chart</p>
+                    </div>
+                </div>
+            `;
+        });
+}
+
+// Load RSI chart by default
+window.addEventListener('load', () => {
+    document.querySelector('button[onclick="loadChart(\'rsi\')"]').click();
+});
+</script>
+{% endblock %}

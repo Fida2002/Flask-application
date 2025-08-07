@@ -1,0 +1,9 @@
+Flask==3.0.0
+Flask-Session==0.5.0
+pandas==2.1.4
+numpy==1.25.2
+requests==2.31.0
+plotly==5.17.0
+ta==0.10.2
+sqlite3-adapter==1.0.0
+gunicorn==21.2.0
